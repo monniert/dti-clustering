@@ -1,0 +1,26 @@
+dataset:
+  name: mnist
+model:
+  name: dtikmeans
+  n_prototypes: 10
+  encoder_name: resnet20
+  transformation_sequence: affine_morpho_tps
+  curriculum_learning: [15, 20]
+  grid_size: 4
+  kernel_size: 7
+training:
+  batch_size: 128
+  optimizer:
+    name: adam
+    lr: 1.0e-3
+    weight_decay: 1.0e-6
+  scheduler:
+    name: multi_step
+    gamma: 0.1
+    milestones: [35]
+    update_range: epoch
+  n_epoches: 40
+  train_stat_interval: 25
+  val_stat_interval: 50
+  check_cluster_interval: 50
+  seed: 2991

@@ -1,0 +1,26 @@
+dataset:
+  name: usps
+model:
+  name: dtikmeans
+  n_prototypes: 10
+  encoder_name: resnet20
+  transformation_sequence: color_affine_tps
+  curriculum_learning: [50, 150]
+  grid_size: 4
+  padding_mode: zeros
+training:
+  batch_size: 128
+  optimizer:
+    name: adam
+    lr: 1.0e-3
+    weight_decay: 1.0e-6
+  scheduler:
+    name: multi_step
+    gamma: 0.1
+    milestones: [250]
+    update_range: epoch
+  n_epoches: 300
+  train_stat_interval: 25
+  val_stat_interval: 50
+  check_cluster_interval: 50
+  seed: 9995
