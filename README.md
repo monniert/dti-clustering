@@ -1,7 +1,7 @@
 # dti-clustering
 
 Pytorch implementation of "Deep Transformation-Invariant Clustering" paper: &nbsp;&nbsp;
-[Preprint](https://imagine-lab.enpc.fr/) | [Project 
+[Preprint](https://arxiv.org/abs/2006.11132) | [Project 
 webpage](http://imagine.enpc.fr/~monniert/DTIClustering)
 
 ![teaser.jpg](http://imagine.enpc.fr/~monniert/DTIClustering/teaser.jpg)
@@ -79,7 +79,7 @@ If you find this work useful in your research, please consider citing:
 @article{monnier2020dticlustering,
   title = {Deep Transformation-Invariant Clustering},
   author = {Monnier, Tom and Groueix, Thibault and Aubry, Mathieu},
-  journal = {arXiv:???},
+  journal = {arXiv:2006.11132},
   year = {2020},
 }
 ```
