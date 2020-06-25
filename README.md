@@ -77,9 +77,9 @@ If you find this work useful in your research, please consider citing:
 
 ```
 @article{monnier2020dticlustering,
-  title = {Deep Transformation-Invariant Clustering},
-  author = {Monnier, Tom and Groueix, Thibault and Aubry, Mathieu},
-  journal = {arXiv:2006.11132},
-  year = {2020},
+  title={Deep Transformation-Invariant Clustering},
+  author={Monnier, Tom and Groueix, Thibault and Aubry, Mathieu},
+  journal={arXiv:2006.11132},
+  year={2020},
 }
 ```
