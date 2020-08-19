@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from .tsfnet import PrototypeTransformationNetwork
+from .transformer import PrototypeTransformationNetwork
 from .tools import copy_with_noise, generate_data
 from utils.logger import print_warning
 

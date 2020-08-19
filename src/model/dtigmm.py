@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 
 from .gmm import GaussianMixtureModel
-from .tsfnet import PrototypeTransformationNetwork
+from .transformer import PrototypeTransformationNetwork
 from utils.logger import print_warning
 
 
