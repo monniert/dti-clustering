@@ -42,7 +42,8 @@ def convert_to_img(arr):
 def save_gif(path, name, in_ext='jpg', size=None, total_sec=10):
     files = sorted(get_files_from_dir(path, in_ext), key=lambda p: int(p.stem))
     try:
-        imgs = [Image.open(f) for f in files]
+        # XXX images MUST be converted to adaptive color palette otherwise the gif has very bad quality
+        imgs = [Image.open(f).convert('P', palette=Image.ADAPTIVE) for f in files]
     except OSError as e:
         print_warning(e)
         return None
@@ -51,7 +52,7 @@ def save_gif(path, name, in_ext='jpg', size=None, total_sec=10):
         if size is not None and size != imgs[0].size:
             imgs = list(map(lambda i: resize(i, size=size), imgs))
         tpf = int(total_sec * 1000 / len(files))
-        imgs[0].save(path.parent / name, optimize=True, save_all=True, append_images=imgs[1:], duration=tpf, loop=0)
+        imgs[0].save(path.parent / name, optimize=False, save_all=True, append_images=imgs[1:], duration=tpf, loop=0)
 
 
 class ImageResizer:
