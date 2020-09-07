@@ -29,22 +29,22 @@ class DTIGMM(nn.Module):
 
     @property
     def prototypes(self):
-        return [self.gmm.mus[k].detach() for k in range(self.n_prototypes)]
+        return self.gmm.mus
 
     @property
     def sigmas(self):
-        return [self.gmm.sigmas[k].detach() for k in range(self.n_prototypes)]
+        return self.gmm.sigmas
 
     @property
     def variances(self):
-        return [self.gmm.sigmas[k].detach()**2 + self.gmm.var_min for k in range(self.n_prototypes)]
+        return self.gmm.sigmas.detach()**2 + self.gmm.var_min
 
     @torch.no_grad()
     def transform(self, x, inverse=False):
         if inverse:
             return self.transformer.inverse_transform(x)
         else:
-            mus = [m.unsqueeze(0).expand(x.size(0), -1, -1, -1) for m in self.gmm.mus]
+            mus = self.gmm.mus.unsqueeze(1).expand(-1, x.size(0), -1, -1, -1)
             return self.transformer(x, mus)[1]
 
     def load_state_dict(self, state_dict):

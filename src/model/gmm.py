@@ -23,8 +23,8 @@ class GaussianMixtureModel(nn.Module):
             mus = generate_data(dataset, K=n_clusters, init_type=init_type)
             sigmas = generate_data(dataset, K=n_clusters, init_type='constant', value=sigma)
 
-        self.mus = nn.ParameterList(list(map(nn.Parameter, mus)))
-        self.sigmas = nn.ParameterList(list(map(nn.Parameter, sigmas)))
+        self.mus = nn.Parameter(torch.stack(mus))
+        self.sigmas = nn.Parameter(torch.stack(sigmas))
         self.sigma_min = sigma_min
         self.var_min = sigma_min**2
         self.n = mus[0].numel()
@@ -47,8 +47,8 @@ class GaussianMixtureModel(nn.Module):
 
     def forward(self, x, transformer=None):
         if transformer is not None and not transformer.is_identity:
-            mus = [m.unsqueeze(0).expand(x.size(0), -1, -1, -1) for m in self.mus]
-            sigmas = [s.unsqueeze(0).expand(x.size(0), -1, -1, -1) for s in self.sigmas]
+            mus = self.mus.unsqueeze(1).expand(-1, x.size(0), -1, -1, -1)
+            sigmas = self.sigmas.unsqueeze(1).expand(-1, x.size(0), -1, -1, -1)
             beta = transformer.predict_parameters(x)
             sigmas = transformer.apply_parameters(x, sigmas, beta, is_var=True)[1]
             x, mus = transformer.apply_parameters(x, mus, beta)

@@ -22,14 +22,14 @@ class DTIKmeans(nn.Module):
             raise NotImplementedError
         self.n_prototypes = n_prototypes
         init_type = kwargs.get('init_type', 'sample')
-        self.prototypes = nn.ParameterList(list(map(nn.Parameter, generate_data(dataset, n_prototypes, init_type))))
+        self.prototypes = nn.Parameter(torch.stack(generate_data(dataset, n_prototypes, init_type)))
         self.transformer = PrototypeTransformationNetwork(dataset.n_channels, dataset.img_size, n_prototypes, **kwargs)
         self.criterion = partial(nn.MSELoss, reduction='none')()
         self.empty_cluster_threshold = kwargs.get('empty_cluster_threshold', EMPTY_CLUSTER_THRESHOLD / n_prototypes)
         self._reassign_cluster = kwargs.get('reassign_cluster', True)
 
     def forward(self, x):
-        prototypes = [proto.unsqueeze(0).expand(x.size(0), -1, -1, -1) for proto in self.prototypes]
+        prototypes = self.prototypes.unsqueeze(1).expand(-1, x.size(0), x.size(1), -1, -1)
         inp, target = self.transformer(x, prototypes)
         distances = self.criterion(inp, target).flatten(2).mean(2)
         dist_min = distances.min(1)[0]
@@ -40,7 +40,7 @@ class DTIKmeans(nn.Module):
         if inverse:
             return self.transformer.inverse_transform(x)
         else:
-            prototypes = [proto.unsqueeze(0).expand(x.size(0), -1, -1, -1) for proto in self.prototypes]
+            prototypes = self.prototypes.unsqueeze(1).expand(-1, x.size(0), x.size(1), -1, -1)
             return self.transformer(x, prototypes)[1]
 
     def load_state_dict(self, state_dict):
