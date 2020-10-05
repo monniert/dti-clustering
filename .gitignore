@@ -10,6 +10,7 @@ Thumbs.db
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # python
 *.py.swp
@@ -26,3 +27,4 @@ jz_*
 /datasets
 /results
 /runs
+/jeanzay
