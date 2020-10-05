@@ -22,6 +22,7 @@ Thumbs.db
 *.png
 
 # data
+jz_*
 /datasets
 /results
 /runs

@@ -6,23 +6,27 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
+from torch.optim import Adam
 
 from .mini_resnet import get_resnet_model as get_mini_resnet_model
 from .resnet import get_resnet_model
 from .tools import copy_with_noise, get_output_size, TPSGrid
+from utils.logger import print_warning
 
 
 N_HIDDEN_UNITS = 128
 
 
 class PrototypeTransformationNetwork(nn.Module):
-    def __init__(self, in_channels, img_size, n_prototypes, **kwargs):
+    def __init__(self, in_channels, img_size, n_prototypes, transformation_sequence, **kwargs):
         super().__init__()
         self.n_prototypes = n_prototypes
+        self.sequence_name = transformation_sequence
+        if self.sequence_name in ['id', 'identity']:
+            return None
         encoder_kwargs = {'in_channels': in_channels, 'encoder_name': kwargs.get('encoder_name', 'resnet_20')}
         self.encoder = Encoder(**encoder_kwargs)
 
-        self.sequence_name = kwargs.get('transformation_sequence', 'aff')
         tsf_kwargs = {
             'in_channels': get_output_size(in_channels, img_size, self.encoder),
             'img_size': img_size,
@@ -32,7 +36,6 @@ class PrototypeTransformationNetwork(nn.Module):
             'kernel_size': kwargs.get('kernel_size', 7),
             'padding_mode': kwargs.get('padding_mode', 'border'),
             'curriculum_learning': kwargs.get('curriculum_learning', False),
-            'diag_color': kwargs.get('diag_color', False),
         }
         self.tsf_sequences = nn.ModuleList([TransformationSequence(**deepcopy(tsf_kwargs))
                                             for i in range(n_prototypes)])
@@ -44,12 +47,14 @@ class PrototypeTransformationNetwork(nn.Module):
     def forward(self, x, prototypes):
         # x shape is BCHW, prototypes list of K elements of size BCHW
         if self.is_identity:
-            inp, target = x.unsqueeze(1).expand(-1, self.n_prototypes, -1, -1, -1), prototypes
+            inp = x.unsqueeze(1).expand(-1, self.n_prototypes, -1, -1, -1)
+            target = prototypes.permute(1, 0, 2, 3, 4)
         else:
             features = self.encoder(x)
             inp = x.unsqueeze(1).expand(-1, self.n_prototypes, -1, -1, -1)
             target = [tsf_seq(proto, features) for tsf_seq, proto in zip(self.tsf_sequences, prototypes)]
-        return inp, torch.stack(target, dim=1)
+            target = torch.stack(target, dim=1)
+        return inp, target
 
     @torch.no_grad()
     def inverse_transform(self, x):
@@ -74,13 +79,30 @@ class PrototypeTransformationNetwork(nn.Module):
         return inp, torch.stack(target, dim=1)
 
     def restart_branch_from(self, i, j, noise_scale=0.001):
+        if self.is_identity:
+            return None
+
         self.tsf_sequences[i].load_with_noise(self.tsf_sequences[j], noise_scale=noise_scale)
+        if hasattr(self, 'optimizer'):
+            opt = self.optimizer
+            if isinstance(opt, (Adam,)):
+                for param_i, param_j in zip(self.tsf_sequences[i].parameters(), self.tsf_sequences[j].parameters()):
+                    if param_i in opt.state:
+                        opt.state[param_i]['exp_avg'] = opt.state[param_j]['exp_avg']
+                        opt.state[param_i]['exp_avg_sq'] = opt.state[param_j]['exp_avg_sq']
+            else:
+                raise NotImplementedError('unknown optimizer: you should define how to reinstanciate statistics if any')
 
     def step(self):
-        [tsf_seq.step() for tsf_seq in self.tsf_sequences]
+        if not self.is_identity:
+            [tsf_seq.step() for tsf_seq in self.tsf_sequences]
 
     def activate_all(self):
-        [tsf_seq.activate_all() for tsf_seq in self.tsf_sequences]
+        if not self.is_identity:
+            [tsf_seq.step() for tsf_seq in self.tsf_sequences]
+
+    def set_optimizer(self, opt):
+        self.optimizer = opt
 
 
 class Encoder(nn.Module):
@@ -228,28 +250,28 @@ class ColorModule(_AbstractTransformationModule):
     def __init__(self, in_channels, **kwargs):
         super().__init__()
         self.color_ch = kwargs.get('color_channels', 3)
-        self.diag_color = kwargs.get('diag_color', False)
-        out_ch = self.color_ch * (self.color_ch + 1)
+        out_ch = 2 * self.color_ch
         self.regressor = nn.Sequential(nn.Linear(in_channels, N_HIDDEN_UNITS), nn.ReLU(True),
                                        nn.Linear(N_HIDDEN_UNITS, N_HIDDEN_UNITS), nn.ReLU(True),
                                        nn.Linear(N_HIDDEN_UNITS, out_ch))
 
         # Identity transformation parameters and regressor initialization
-        ch = self.color_ch
-        identity = torch.cat([torch.eye(ch, ch), torch.zeros(ch, 1)], dim=1).flatten()
+        identity = torch.eye(self.color_ch, self.color_ch)
         self.register_buffer('identity', identity)
         self.regressor[-1].weight.data.zero_()
-        self.regressor[-1].bias.data.copy_(self.identity)
+        self.regressor[-1].bias.data.zero_()
 
     def _transform(self, x, beta, inverse=False):
-        weight, bias = torch.split(beta.view(-1, self.color_ch, self.color_ch + 1), [self.color_ch, 1], dim=2)
+        weight, bias = torch.split(beta.view(-1, self.color_ch, 2), [1, 1], dim=2)
+        weight = weight.expand(-1, -1, self.color_ch) * self.identity
+        weight = weight + self.identity
         bias = bias.unsqueeze(-1).expand(-1, -1, x.size(2), x.size(3))
+
         if inverse:
-            return torch.einsum('bij, bjkl -> bikl', torch.inverse(weight), x - bias)
+            output = torch.einsum('bij, bjkl -> bikl', torch.inverse(weight), x - bias)
         else:
-            if self.diag_color:
-                weight = weight * torch.eye(3, 3).unsqueeze(0).expand(x.size(0), -1, -1).to(x.device)
-            return torch.einsum('bij, bjkl -> bikl', weight, x) + bias
+            output = torch.einsum('bij, bjkl -> bikl', weight, x) + bias
+        return output
 
 
 ########################
@@ -266,12 +288,12 @@ class AffineModule(_AbstractTransformationModule):
                                        nn.Linear(N_HIDDEN_UNITS, 3 * 2))
 
         # Identity transformation parameters and regressor initialization
-        self.register_buffer('identity', torch.cat([torch.eye(2, 2), torch.zeros(2, 1)], dim=1).flatten())
+        self.register_buffer('identity', torch.cat([torch.eye(2, 2), torch.zeros(2, 1)], dim=1))
         self.regressor[-1].weight.data.zero_()
-        self.regressor[-1].bias.data.copy_(self.identity)
+        self.regressor[-1].bias.data.zero_()
 
     def _transform(self, x, beta, inverse=False):
-        beta = beta.view(-1, 2, 3)
+        beta = beta.view(-1, 2, 3) + self.identity
         if inverse:
             row = torch.tensor([[[0, 0, 1]]] * x.size(0), dtype=torch.float, device=beta.device)
             beta = torch.cat([beta, row], dim=1)
@@ -289,12 +311,12 @@ class ProjectiveModule(_AbstractTransformationModule):
                                        nn.Linear(N_HIDDEN_UNITS, 3 * 3))
 
         # Identity transformation parameters and regressor initialization
-        self.register_buffer('identity', torch.eye(3, 3).flatten())
+        self.register_buffer('identity', torch.eye(3, 3))
         self.regressor[-1].weight.data.zero_()
-        self.regressor[-1].bias.data.copy_(self.identity)
+        self.regressor[-1].bias.data.zero_()
 
     def _transform(self, x, beta, inverse=False):
-        beta = beta.view(-1, 3, 3)
+        beta = beta.view(-1, 3, 3) + self.identity
         if inverse:
             beta = torch.inverse(beta)
         return homography_warp(x, beta, dsize=(x.size(2), x.size(3)), padding_mode=self.padding_mode)
@@ -314,14 +336,15 @@ class TPSModule(_AbstractTransformationModule):
         self.tps_grid = TPSGrid(img_size, target_control_points)
 
         # Identity transformation parameters and regressor initialization
-        self.register_buffer('identity', target_control_points.flatten())
+        self.register_buffer('identity', target_control_points)
         self.regressor[-1].weight.data.zero_()
-        self.regressor[-1].bias.data.copy_(self.identity)
+        self.regressor[-1].bias.data.zero_()
 
     def _transform(self, x, beta, inverse=False):
-        source_control_points = beta.view(x.size(0), -1, 2)
+        source_control_points = beta.view(x.size(0), -1, 2) + self.identity
         if inverse:
-            return NotImplemented
+            print_warning('TPS inverse not implemented, returning identity')
+            return x
         grid = self.tps_grid(source_control_points).view(x.size(0), *self.img_size, 2)
         return F.grid_sample(x, grid, padding_mode=self.padding_mode, align_corners=False)
 
@@ -346,12 +369,14 @@ class MorphologicalModule(_AbstractTransformationModule):
         weights[center, center] = 5
         self.register_buffer('identity', torch.cat([torch.zeros(1), weights.flatten()]))
         self.regressor[-1].weight.data.zero_()
-        self.regressor[-1].bias.data.copy_(self.identity)
+        self.regressor[-1].bias.data.zero_()
 
     def _transform(self, x, beta, inverse=False):
+        beta = beta + self.identity
         alpha, weights = torch.split(beta, [1, self.kernel_size ** 2], dim=1)
         if inverse:
-            raise NotImplementedError
+            print_warning('TPS inverse not implemented, returning identity')
+            return x
         return self.smoothmax_kernel(x, alpha, torch.sigmoid(weights))
 
     def smoothmax_kernel(self, x, alpha, kernel):

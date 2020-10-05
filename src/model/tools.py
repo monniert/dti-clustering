@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from scipy import signal
 
 import numpy as np
 import torch
@@ -25,6 +26,13 @@ def initialize_weights(*models):
             elif isinstance(module, nn.BatchNorm2d):
                 module.weight.data.fill_(1)
                 module.bias.data.zero_()
+
+
+def create_gaussian_weights(img_size, n_channels, std=10):
+    g1d_h = signal.gaussian(img_size[0], std)
+    g1d_w = signal.gaussian(img_size[1], std)
+    g2d = np.outer(g1d_h, g1d_w)
+    return torch.from_numpy(g2d).unsqueeze(0).expand(n_channels, -1, -1)
 
 
 def generate_data(dataset, K, init_type='sample', value=None):

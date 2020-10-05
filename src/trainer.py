@@ -98,10 +98,18 @@ class Trainer:
         self.n_prototypes = self.model.n_prototypes
 
         # Optimizer
-        self.opt_params = cfg["training"]["optimizer"] or {}
-        self.optimizer_name = self.opt_params.pop("name", None)
-        self.optimizer = get_optimizer(self.optimizer_name)(self.model.parameters(), **self.opt_params)
-        self.print_and_log_info("Using optimizer {} with kwargs {}".format(self.optimizer_name, self.opt_params))
+        opt_params = cfg["training"]["optimizer"] or {}
+        optimizer_name = opt_params.pop("name")
+        cluster_kwargs = opt_params.pop('cluster', {})
+        tsf_kwargs = opt_params.pop('transformer', {})
+        self.optimizer = get_optimizer(optimizer_name)([
+            dict(params=self.model.cluster_parameters(), **cluster_kwargs),
+            dict(params=self.model.transformer_parameters(), **tsf_kwargs)],
+            **opt_params)
+        self.model.set_optimizer(self.optimizer)
+        self.print_and_log_info("Using optimizer {} with kwargs {}".format(optimizer_name, opt_params))
+        self.print_and_log_info("cluster kwargs {}".format(cluster_kwargs))
+        self.print_and_log_info("transformer kwargs {}".format(tsf_kwargs))
 
         # Scheduler
         scheduler_params = cfg["training"].get("scheduler", {}) or {}
@@ -237,7 +245,7 @@ class Trainer:
                         self.log_val_metrics(cur_iter, epoch, batch)
                     self.save(epoch=epoch, batch=batch)
 
-            self.model.transformer.step()
+            self.model.step()
             if self.scheduler_update_range == "epoch" and batch_start == 1:
                 self.update_scheduler(epoch + 1, batch=1)
 
@@ -376,10 +384,10 @@ class Trainer:
             self.save_variances()
         for k in range(self.n_prototypes):
             save_gif(self.prototypes_path / f'proto{k}', f'prototype{k}.gif', size=size)
-            # shutil.rmtree(str(self.prototypes_path / f'proto{k}'))
+            shutil.rmtree(str(self.prototypes_path / f'proto{k}'))
             if self.is_gmm:
                 save_gif(self.variances_path / f'var{k}', f'variance{k}.gif', size=size)
-                # shutil.rmtree(str(self.variances_path / f'var{k}'))
+                shutil.rmtree(str(self.variances_path / f'var{k}'))
 
         # Transformation predictions
         if self.model.transformer.is_identity:
@@ -390,7 +398,7 @@ class Trainer:
             for i in range(self.images_to_tsf.size(0)):
                 for k in range(self.n_prototypes):
                     save_gif(self.transformation_path / f'img{i}' / f'tsf{k}', f'tsf{k}.gif', size=size)
-                    # shutil.rmtree(str(self.transformation_path / f'img{i}' / f'tsf{k}'))
+                    shutil.rmtree(str(self.transformation_path / f'img{i}' / f'tsf{k}'))
 
         self.print_and_log_info("Training visuals saved")
 

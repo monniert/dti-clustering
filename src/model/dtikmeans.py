@@ -2,10 +2,11 @@ from functools import partial
 
 import torch
 import torch.nn as nn
+from torch.optim import Adam
 import numpy as np
 
 from .transformer import PrototypeTransformationNetwork
-from .tools import copy_with_noise, generate_data
+from .tools import copy_with_noise, create_gaussian_weights, generate_data
 from utils.logger import print_warning
 
 
@@ -27,11 +28,25 @@ class DTIKmeans(nn.Module):
         self.criterion = partial(nn.MSELoss, reduction='none')()
         self.empty_cluster_threshold = kwargs.get('empty_cluster_threshold', EMPTY_CLUSTER_THRESHOLD / n_prototypes)
         self._reassign_cluster = kwargs.get('reassign_cluster', True)
+        use_gaussian_weights = kwargs.get('gaussian_weights', False)
+        if use_gaussian_weights:
+            std = kwargs.get('gaussian_weights_std', 10)
+            self.register_buffer('loss_weights', create_gaussian_weights(dataset.img_size, dataset.n_channels, std))
+        else:
+            self.loss_weights = None
+
+    def cluster_parameters(self):
+        return [self.prototypes]
+
+    def transformer_parameters(self):
+        return self.transformer.parameters()
 
     def forward(self, x):
         prototypes = self.prototypes.unsqueeze(1).expand(-1, x.size(0), x.size(1), -1, -1)
         inp, target = self.transformer(x, prototypes)
         distances = self.criterion(inp, target).flatten(2).mean(2)
+        if self.loss_weights is not None:
+            distances = distances * self.loss_weights
         dist_min = distances.min(1)[0]
         return dist_min.mean(), distances
 
@@ -42,6 +57,13 @@ class DTIKmeans(nn.Module):
         else:
             prototypes = self.prototypes.unsqueeze(1).expand(-1, x.size(0), x.size(1), -1, -1)
             return self.transformer(x, prototypes)[1]
+
+    def step(self):
+        self.transformer.step()
+
+    def set_optimizer(self, opt):
+        self.optimizer = opt
+        self.transformer.set_optimizer(opt)
 
     def load_state_dict(self, state_dict):
         unloaded_params = []
@@ -73,3 +95,12 @@ class DTIKmeans(nn.Module):
     def restart_branch_from(self, i, j):
         self.prototypes[i].data.copy_(copy_with_noise(self.prototypes[j], NOISE_SCALE))
         self.transformer.restart_branch_from(i, j, noise_scale=0)
+
+        if hasattr(self, 'optimizer'):
+            opt = self.optimizer
+            if isinstance(opt, (Adam,)):
+                param = self.prototypes
+                opt.state[param]['exp_avg'][i] = opt.state[param]['exp_avg'][j]
+                opt.state[param]['exp_avg_sq'][i] = opt.state[param]['exp_avg_sq'][j]
+            else:
+                raise NotImplementedError('unknown optimizer: you should define how to reinstanciate statistics if any')
