@@ -4,10 +4,9 @@ model:
   name: dtikmeans
   n_prototypes: 10
   encoder_name: resnet20
-  transformation_sequence: color_projective
-  curriculum_learning: [10]
-  grid_size: 4
-  gaussian_weights: False
+  transformation_sequence: identity_color_projective
+  curriculum_learning: [2, 18]
+  gaussian_weights: True
   gaussian_weights_std: 7
 training:
   batch_size: 128
@@ -15,14 +14,15 @@ training:
     name: adam
     lr: 1.0e-3
     transformer:
-      weight_decay: 0
+      weight_decay: 1.0e-6
   scheduler:
     name: multi_step
     gamma: 0.1
-    milestones: [20]
+    milestones: [30]
     update_range: epoch
-  n_epoches: 25
+  n_epoches: 33
   train_stat_interval: 500
   val_stat_interval: 1000
   check_cluster_interval: 100
-  seed: 146
+  seed: 4873
+  visualizer_port:

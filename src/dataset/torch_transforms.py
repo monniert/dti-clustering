@@ -5,12 +5,12 @@ from utils import use_seed
 
 
 class ColorAugment():
-    def __init__(self, use_seed=False):
-        self.use_seed = use_seed
+    def __call__(self, img, seed=None):
+        self.apply(img)
 
-    def __call__(self, img):
-        if self.use_seed:
-            seed = int(img.sum().item() * 1e6)
+    @staticmethod
+    def apply(img, seed=None):
+        if seed is not None:
             with use_seed(seed):
                 color = torch.rand(3, 1, 1) * 2 - 1
                 bias = torch.rand(3, 1, 1)
@@ -30,7 +30,7 @@ class TensorResize():
 
     def __call__(self, img):
         # XXX interpolate first dim is a batch dim
-        return F.interpolate(img.unsqueeze(0), self.img_size)[0]
+        return F.interpolate(img.unsqueeze(0), self.img_size, mode='bilinear')[0]
 
     def __repr__(self):
         return self.__class__.__name__ + '()'

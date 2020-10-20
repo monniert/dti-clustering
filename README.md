@@ -1,6 +1,7 @@
 # dti-clustering
 
-Pytorch implementation of "Deep Transformation-Invariant Clustering" paper: &nbsp;&nbsp;
+(NeurIPS2020 oral) Pytorch implementation of "Deep Transformation-Invariant Clustering" 
+paper: &nbsp;&nbsp;
 [Preprint](https://arxiv.org/abs/2006.11132) | [Project 
 webpage](http://imagine.enpc.fr/~monniert/DTIClustering)
 
@@ -13,6 +14,14 @@ webpage](http://imagine.enpc.fr/~monniert/DTIClustering)
 ```
 conda env create -f environment.yml
 conda activate dtic
+```
+
+**Optional:** some monitoring routines are implemented, you can use them by specifying the 
+visdom port in the config file. You will need to install `visdom` from source beforehand
+
+```
+git clone https://github.com/facebookresearch/visdom
+cd visdom && pip install -e .
 ```
 
 ### 2. Download non-torchvision datasets
@@ -76,10 +85,10 @@ That's it!
 If you find this work useful in your research, please consider citing:
 
 ```
-@article{monnier2020dticlustering,
+@inproceedings{monnier2020dticlustering,
   title={{Deep Transformation-Invariant Clustering}},
   author={Monnier, Tom and Groueix, Thibault and Aubry, Mathieu},
-  journal={arXiv:2006.11132},
+  booktitle={NeurIPS},
   year={2020},
 }
 ```

@@ -1,13 +1,13 @@
 dataset:
-  name: instagram
-  tag: santaphoto
+  name: megadepth
+  tag: notre_dame
   img_size: 128
 model:
   name: dtikmeans
-  n_prototypes: 40
+  n_prototypes: 16
   encoder_name: resnet18
   transformation_sequence: identity_color_projective
-  curriculum_learning: [5, 15]
+  curriculum_learning: [150, 400]
 training:
   batch_size: 64
   optimizer:
@@ -18,9 +18,9 @@ training:
   scheduler:
     name: multi_step
     gamma: 0.1
-    milestones: [100]
+    milestones: [900]
     update_range: epoch
-  n_epoches: 110
+  n_epoches: 1100
   train_stat_interval: 50
   val_stat_interval: 100
   check_cluster_interval: 100

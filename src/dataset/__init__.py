@@ -1,6 +1,6 @@
 from .custom import AffNISTTestDataset
 from .hdf5 import FRGCDataset
-from .raw import InstagramDataset
+from .raw import InstagramDataset, MegaDepthDataset
 from .torchvision import (FashionMNISTDataset, MNISTDataset, MNISTTestDataset, MNISTColorDataset, MNIST1kDataset,
                           SVHNDataset, USPSDataset)
 
@@ -15,6 +15,7 @@ def get_dataset(dataset_name):
 
         # Raw
         'instagram': InstagramDataset,
+        'megadepth': MegaDepthDataset,
 
         # Torchvision
         'fashion_mnist': FashionMNISTDataset,

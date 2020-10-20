@@ -24,9 +24,9 @@ class DTIGMM(nn.Module):
         self.n_prototypes = n_prototypes
 
         # GMM initialization
-        init_type = kwargs.get('init_type', 'kmeans')
-        sigma = kwargs.get('sigma_prior', 0.1)
-        var_min = kwargs.get('var_min', 0.05)
+        init_type = kwargs.get('init_type', 'sample')
+        sigma = kwargs.get('sigma_init', 0.5)
+        var_min = kwargs.get('var_min', 0.25**2)
         if init_type == 'kmeans':
             mus, sigmas = self._kmeans_init(dataset, n_prototypes, var_min)
         else:
@@ -46,7 +46,7 @@ class DTIGMM(nn.Module):
         self._reassign_cluster = kwargs.get('reassign_cluster', True)
         use_gaussian_weights = kwargs.get('gaussian_weights', False)
         if use_gaussian_weights:
-            std = kwargs.get('gaussian_weights_std', 10)
+            std = kwargs['gaussian_weights_std']
             self.register_buffer('loss_weights', create_gaussian_weights(dataset.img_size, dataset.n_channels, std))
         else:
             self.loss_weights = None
@@ -85,8 +85,8 @@ class DTIGMM(nn.Module):
             beta = self.transformer.predict_parameters(x)
             mus = self.mus.unsqueeze(1).expand(-1, x.size(0), -1, -1, -1)
             mus = self.transformer.apply_parameters(mus, beta).permute(1, 0, 2, 3, 4)
-            sigmas = self.sigmas.unsqueeze(1).expand(-1, x.size(0), -1, -1, -1).permute(1, 0, 2, 3, 4)
-            sigmas = self.transformer.apply_parameters(sigmas, beta, is_var=True)
+            sigmas = self.sigmas.unsqueeze(1).expand(-1, x.size(0), -1, -1, -1)
+            sigmas = self.transformer.apply_parameters(sigmas, beta, is_var=True).permute(1, 0, 2, 3, 4)
         else:
             mus, sigmas = self.mus, self.sigmas
 

@@ -1,9 +1,11 @@
 import argparse
+import os
 import shutil
 import time
 import yaml
 
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
@@ -17,6 +19,7 @@ from utils.image import convert_to_img, save_gif
 from utils.logger import get_logger, print_info, print_warning
 from utils.metrics import AverageTensorMeter, AverageMeter, Metrics, Scores
 from utils.path import CONFIGS_PATH, RUNS_PATH
+from utils.plot import plot_lines, plot_bar
 
 
 PRINT_TRAIN_STAT_FMT = "Epoch [{}/{}], Iter [{}/{}], train_metrics: {}".format
@@ -33,6 +36,9 @@ MODEL_FILE = 'model.pkl'
 N_TRANSFORMATION_PREDICTIONS = 4
 N_CLUSTER_SAMPLES = 5
 MAX_GIF_SIZE = 64
+VIZ_HEIGHT = 300
+VIZ_WIDTH = 500
+VIZ_MAX_IMG_SIZE = 64
 
 
 class Trainer:
@@ -134,7 +140,7 @@ class Trainer:
         else:
             self.start_epoch, self.start_batch = 1, 1
 
-        # Train metrics
+        # Train metrics & check_cluster interval
         metric_names = ['time/img', 'loss']
         metric_names += [f'prop_clus{i}' for i in range(self.n_prototypes)]
         train_iter_interval = cfg["training"]["train_stat_interval"]
@@ -143,6 +149,7 @@ class Trainer:
         self.train_metrics_path = self.run_dir / TRAIN_METRICS_FILE
         with open(self.train_metrics_path, mode="w") as f:
             f.write("iteration\tepoch\tbatch\t" + "\t".join(self.train_metrics.names) + "\n")
+        self.check_cluster_interval = cfg["training"]["check_cluster_interval"]
 
         # Val metrics & scores
         val_iter_interval = cfg["training"]["val_stat_interval"]
@@ -158,7 +165,6 @@ class Trainer:
             f.write("iteration\tepoch\tbatch\t" + "\t".join(self.val_scores.names) + "\n")
 
         # Prototypes & Variances
-        self.check_cluster_interval = cfg["training"]["check_cluster_interval"]
         self.prototypes_path = coerce_to_path_and_create_dir(self.run_dir / 'prototypes')
         [coerce_to_path_and_create_dir(self.prototypes_path / f'proto{k}') for k in range(self.n_prototypes)]
         if self.is_gmm:
@@ -172,6 +178,18 @@ class Trainer:
             out = coerce_to_path_and_create_dir(self.transformation_path / f'img{k}')
             convert_to_img(self.images_to_tsf[k]).save(out / 'input.png')
             [coerce_to_path_and_create_dir(out / f'tsf{k}') for k in range(self.n_prototypes)]
+
+        # Visdom
+        viz_port = cfg["training"].get("visualizer_port")
+        if viz_port is not None:
+            from visdom import Visdom
+            os.environ["http_proxy"] = ""
+            self.visualizer = Visdom(port=viz_port, env=f'{self.run_dir.parent.name}_{self.run_dir.name}')
+            self.visualizer.delete_env(self.visualizer.env)  # Clean env before plotting
+            self.print_and_log_info(f"Visualizer initialised at {viz_port}")
+        else:
+            self.visualizer = None
+            self.print_and_log_info("No visualizer initialized")
 
     def print_and_log_info(self, string):
         print_info(string)
@@ -236,20 +254,20 @@ class Trainer:
                 if (cur_iter - prev_check_cluster_iter) >= self.check_cluster_interval:
                     prev_check_cluster_iter = cur_iter
                     self.check_cluster(cur_iter, epoch, batch)
-                    self.log_images(cur_iter)
 
                 if (cur_iter - prev_val_stat_iter) >= self.val_stat_interval:
                     prev_val_stat_iter = cur_iter
                     if not self.is_val_empty:
                         self.run_val()
                         self.log_val_metrics(cur_iter, epoch, batch)
+                    self.log_images(cur_iter)
                     self.save(epoch=epoch, batch=batch)
 
             self.model.step()
             if self.scheduler_update_range == "epoch" and batch_start == 1:
                 self.update_scheduler(epoch + 1, batch=1)
 
-        self.save_training_visuals()
+        self.save_training_metrics()
         self.evaluate()
         self.print_and_log_info("Training run is over")
 
@@ -285,9 +303,17 @@ class Trainer:
     @torch.no_grad()
     def log_images(self, cur_iter):
         self.save_prototypes(cur_iter)
+        self.update_visualizer_images(self.model.prototypes, 'prototypes', nrow=5)
         if self.is_gmm:
             self.save_variances(cur_iter)
-        self.save_transformed_images(cur_iter)
+            variances = self.model.variances
+            M = variances.flatten(1).max(1)[0][:, None, None, None]
+            variances = (variances - self.model.var_min) / (M - self.model.var_min + 1e-7)
+            self.update_visualizer_images(variances, 'variances', nrow=5)
+
+        tsf_imgs = self.save_transformed_images(cur_iter)
+        C, H, W = tsf_imgs.shape[2:]
+        self.update_visualizer_images(tsf_imgs.view(-1, C, H, W), 'transformations', nrow=self.n_prototypes+1)
 
     def save_prototypes(self, cur_iter=None):
         prototypes = self.model.prototypes
@@ -308,14 +334,27 @@ class Trainer:
                 img.save(self.variances_path / f'variance{k}.png')
 
     @torch.no_grad()
-    def save_transformed_images(self, cur_iter):
+    def save_transformed_images(self, cur_iter=None):
         self.model.eval()
         output = self.model.transform(self.images_to_tsf)
 
         transformed_imgs = torch.cat([self.images_to_tsf.unsqueeze(1), output], 1)
         for k in range(transformed_imgs.size(0)):
             for j, img in enumerate(transformed_imgs[k][1:]):
-                convert_to_img(img).save(self.transformation_path / f'img{k}' / f'tsf{j}' / f'{cur_iter}.jpg')
+                if cur_iter is not None:
+                    convert_to_img(img).save(self.transformation_path / f'img{k}' / f'tsf{j}' / f'{cur_iter}.jpg')
+                else:
+                    convert_to_img(img).save(self.transformation_path / f'img{k}' / f'tsf{j}.png')
+        return transformed_imgs
+
+    def update_visualizer_images(self, images, title, nrow):
+        if self.visualizer is None:
+            return None
+
+        if max(images.shape[1:]) > VIZ_MAX_IMG_SIZE:
+            images = torch.nn.functional.interpolate(images, size=VIZ_MAX_IMG_SIZE, mode='bilinear')
+        self.visualizer.images(images.clamp(0, 1), win=title, nrow=nrow,
+                               opts=dict(title=title, store_history=True, width=VIZ_WIDTH, height=VIZ_HEIGHT))
 
     def check_cluster(self, cur_iter, epoch, batch):
         proportions = [self.train_metrics[f'prop_clus{i}'].avg for i in range(self.n_prototypes)]
@@ -331,7 +370,37 @@ class Trainer:
         with open(self.train_metrics_path, mode="a") as f:
             f.write("{}\t{}\t{}\t".format(cur_iter, epoch, batch) +
                     "\t".join(map("{:.4f}".format, self.train_metrics.avg_values)) + "\n")
+
+        self.update_visualizer_metrics(cur_iter, train=True)
         self.train_metrics.reset('time/img', 'loss')
+
+    def update_visualizer_metrics(self, cur_iter, train):
+        if self.visualizer is None:
+            return None
+
+        split, metrics = ('train', self.train_metrics) if train else ('val', self.val_metrics)
+        loss_names = [n for n in metrics.names if 'loss' in n]
+        y, x = [[metrics[n].avg for n in loss_names]], [[cur_iter] * len(loss_names)]
+        self.visualizer.line(y, x, win=f'{split}_loss', update='append',
+                             opts=dict(title=f'{split}_loss', legend=loss_names, width=VIZ_WIDTH, height=VIZ_HEIGHT))
+
+        if train:
+            if self.n_prototypes > 1:
+                # Cluster proportions
+                proportions = [metrics[f'prop_clus{i}'].avg for i in range(self.n_prototypes)]
+                self.visualizer.bar(proportions, win=f'train_cluster_prop',
+                                    opts=dict(title=f'train_cluster_proportions', width=VIZ_HEIGHT, height=VIZ_HEIGHT))
+        else:
+            # Scores
+            names = list(filter(lambda name: 'cls' not in name, self.val_scores.names))
+            y, x = [[self.val_scores[n] for n in names]], [[cur_iter] * len(names)]
+            self.visualizer.line(y, x, win=f'global_scores', update='append',
+                                 opts=dict(title=f'global_scores', legend=names, width=VIZ_WIDTH, height=VIZ_HEIGHT))
+
+            y, x = [[self.val_scores[f'acc_cls{i}'] for i in range(self.n_classes)]], [[cur_iter] * self.n_classes]
+            self.visualizer.line(y, x, win=f'acc_by_cls', update='append',
+                                 opts=dict(title=f'acc_by_cls', legend=[f'cls{i}' for i in range(self.n_classes)],
+                                           width=VIZ_WIDTH, heigh=VIZ_HEIGHT))
 
     @torch.no_grad()
     def run_val(self):
@@ -358,6 +427,7 @@ class Trainer:
             f.write("{}\t{}\t{}\t".format(cur_iter, epoch, batch) +
                     "\t".join(map("{:.4f}".format, scores.values())) + "\n")
 
+        self.update_visualizer_metrics(cur_iter, train=False)
         self.val_scores.reset()
         self.val_metrics.reset()
 
@@ -376,7 +446,39 @@ class Trainer:
         torch.save(state, save_path)
         self.print_and_log_info("Model saved at {}".format(save_path))
 
-    def save_training_visuals(self):
+    def save_training_metrics(self):
+        df_train = pd.read_csv(self.train_metrics_path, sep="\t", index_col=0)
+        df_val = pd.read_csv(self.val_metrics_path, sep="\t", index_col=0)
+        df_scores = pd.read_csv(self.val_scores_path, sep="\t", index_col=0)
+        if len(df_train) == 0:
+            self.print_and_log_info("No metrics or plots to save")
+            return
+
+        # Losses
+        losses = list(filter(lambda s: s.startswith('loss'), self.train_metrics.names))
+        df = df_train.join(df_val[['loss_val']], how="outer")
+        fig = plot_lines(df, losses + ['loss_val'], title="Loss")
+        fig.savefig(self.run_dir / "loss.pdf")
+
+        # Cluster proportions
+        names = list(filter(lambda s: s.startswith('prop_'), self.train_metrics.names))
+        fig = plot_lines(df, names, title="Cluster proportions")
+        fig.savefig(self.run_dir / "cluster_proportions.pdf")
+        s = df[names].iloc[-1]
+        s.index = list(map(lambda n: n.replace('prop_clus', ''), names))
+        fig = plot_bar(s, title="Final cluster proportions")
+        fig.savefig(self.run_dir / "cluster_proportions_final.pdf")
+
+        # Validation
+        if not self.is_val_empty:
+            names = list(filter(lambda name: 'cls' not in name, self.val_scores.names))
+            fig = plot_lines(df_scores, names, title="Global scores", unit_yaxis=True)
+            fig.savefig(self.run_dir / 'global_scores.pdf')
+
+            fig = plot_lines(df_scores, [f'acc_cls{i}' for i in range(self.n_classes)],
+                             title="Scores by cls", unit_yaxis=True)
+            fig.savefig(self.run_dir / "scores_by_cls.pdf")
+
         # Prototypes & Variances
         size = MAX_GIF_SIZE if MAX_GIF_SIZE < max(self.img_size) else self.img_size
         self.save_prototypes()
@@ -395,12 +497,13 @@ class Trainer:
             shutil.rmtree(str(self.transformation_path))
             coerce_to_path_and_create_dir(self.transformation_path)
         else:
+            self.save_transformed_images()
             for i in range(self.images_to_tsf.size(0)):
                 for k in range(self.n_prototypes):
                     save_gif(self.transformation_path / f'img{i}' / f'tsf{k}', f'tsf{k}.gif', size=size)
                     shutil.rmtree(str(self.transformation_path / f'img{i}' / f'tsf{k}'))
 
-        self.print_and_log_info("Training visuals saved")
+        self.print_and_log_info("Training metrics and visuals saved")
 
     def evaluate(self):
         self.model.eval()
@@ -414,6 +517,10 @@ class Trainer:
     @torch.no_grad()
     def qualitative_eval(self):
         """Routine to save qualitative results"""
+        loss = AverageMeter()
+        scores_path = self.run_dir / FINAL_SCORES_FILE
+        with open(scores_path, mode="w") as f:
+            f.write("loss\n")
         cluster_path = coerce_to_path_and_create_dir(self.run_dir / 'clusters')
         dataset = self.train_loader.dataset
         train_loader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.n_workers, shuffle=False)
@@ -425,6 +532,7 @@ class Trainer:
             images = images.to(self.device)
             dist = self.model(images)[1]
             dist_min_by_sample, argmin_idx = map(lambda t: t.cpu().numpy(), dist.min(1))
+            loss.update(dist_min_by_sample.mean(), n=len(dist_min_by_sample))
             argmin_idx = argmin_idx.astype(np.int32)
             distances = np.hstack([distances, dist_min_by_sample])
             cluster_idx = np.hstack([cluster_idx, argmin_idx])
@@ -433,6 +541,10 @@ class Trainer:
             for k in range(self.n_prototypes):
                 imgs = transformed_imgs[argmin_idx == k, k]
                 averages[k].update(imgs)
+
+        self.print_and_log_info("final_loss: {:.5}".format(loss.avg))
+        with open(scores_path, mode="a") as f:
+            f.write("{:.5}\n".format(loss.avg))
 
         # Save results
         with open(cluster_path / 'cluster_counts.tsv', mode='w') as f:

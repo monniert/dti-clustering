@@ -3,7 +3,7 @@ from abc import ABCMeta
 import numpy as np
 from torch.utils.data.dataset import Dataset as TorchDataset, ConcatDataset
 from torchvision.datasets import FashionMNIST, MNIST, SVHN, USPS
-from torchvision.transforms import Resize, ToTensor, Compose
+from torchvision.transforms import ToTensor, Compose
 
 from utils import use_seed
 from utils.path import DATASETS_PATH
@@ -22,9 +22,7 @@ class _AbstractTorchvisionDataset(TorchDataset):
     name = NotImplementedError
     n_classes = NotImplementedError
     n_channels = NotImplementedError
-    img_size = NotImplementedError  # Original img_size
-    mean = NotImplementedError
-    std = NotImplementedError
+    img_size = NotImplementedError
     test_split_only = False
     label_shift = 0
     n_samples = None
@@ -32,10 +30,6 @@ class _AbstractTorchvisionDataset(TorchDataset):
     def __init__(self, split, **kwargs):
         super().__init__()
         self.split = split
-        img_size = kwargs.get('img_size')
-        if img_size is not None:
-            self.img_size = (img_size, img_size) if isinstance(img_size, int) else img_size
-            assert len(self.img_size) == 2
         self.eval_mode = kwargs.get('eval_mode', False)
 
         kwargs = {}
@@ -78,11 +72,7 @@ class _AbstractTorchvisionDataset(TorchDataset):
 
     @property
     def transform(self):
-        transform = []
-        if self.img_size != self.__class__.img_size:
-            transform.append(Resize(self.img_size))
-        transform.append(ToTensor())
-        return Compose(transform)
+        return Compose([ToTensor()])
 
     def __len__(self):
         return len(self.dataset)
@@ -107,14 +97,6 @@ class MNISTDataset(_AbstractTorchvisionDataset):
     n_channels = 1
     img_size = (28, 28)
 
-    @property
-    def transform(self):
-        transform = []
-        if self.img_size != self.__class__.img_size:
-            transform.append(Resize(self.img_size))
-        transform.append(ToTensor())
-        return Compose(transform)
-
 
 class MNISTTestDataset(MNISTDataset):
     name = 'mnist_test'
@@ -131,14 +113,10 @@ class MNISTColorDataset(MNISTDataset):
     name = 'mnist_color'
     n_channels = 3
 
-    @property
-    def transform(self):
-        transform = []
-        if self.img_size != self.__class__.img_size:
-            transform.append(Resize(self.img_size))
-        transform.append(ToTensor())
-        transform.append(ColorAugment(use_seed=True))
-        return Compose(transform)
+    def __getitem__(self, idx):
+        img, label = self.dataset[idx]
+        img = ColorAugment.apply(img, seed=idx)
+        return img, label + self.label_shift
 
 
 class SVHNDataset(_AbstractTorchvisionDataset):

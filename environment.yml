@@ -1,28 +1,44 @@
 name: dtic
 channels:
   - pytorch
+  - conda-forge
   - defaults
 dependencies:
   - _libgcc_mutex=0.1
   - blas=1.0
-  - ca-certificates=2020.1.1
-  - certifi=2020.4.5.2
+  - ca-certificates=2020.7.22
+  - certifi=2020.6.20
   - cudatoolkit=10.1.243
+  - cycler=0.10.0
+  - dbus=1.13.6
+  - expat=2.2.9
+  - fontconfig=2.13.1
   - freetype=2.9.1
+  - glib=2.65.0
+  - gst-plugins-base=1.14.0
+  - gstreamer=1.14.0
   - h5py=2.10.0
   - hdf5=1.10.4
+  - icu=58.2
   - intel-openmp=2020.1
   - joblib=0.15.1
   - jpeg=9b
+  - kiwisolver=1.2.0
   - ld_impl_linux-64=2.33.1
   - libedit=3.1.20181209
   - libffi=3.3
   - libgcc-ng=9.1.0
   - libgfortran-ng=7.3.0
+  - libiconv=1.16
   - libpng=1.6.37
   - libstdcxx-ng=9.1.0
   - libtiff=4.1.0
+  - libuuid=2.32.1
+  - libxcb=1.13
+  - libxml2=2.9.9
   - lz4-c=1.9.2
+  - matplotlib=3.2.1
+  - matplotlib-base=3.2.1
   - mkl=2020.1
   - mkl-service=2.3.0
   - mkl_fft=1.0.15
@@ -32,22 +48,35 @@ dependencies:
   - numpy=1.18.1
   - numpy-base=1.18.1
   - olefile=0.46
-  - openssl=1.1.1g
+  - openssl=1.1.1h
+  - pandas=1.0.3
+  - pcre=8.44
   - pillow=7.1.2
   - pip=20.0.2
+  - pthread-stubs=0.4
+  - pyparsing=2.4.7
+  - pyqt=5.9.2
   - python=3.7.7
+  - python-dateutil=2.8.1
+  - python_abi=3.7
   - pytorch=1.5.0
+  - pytz=2020.1
   - pyyaml=5.3.1
+  - qt=5.9.7
   - readline=8.0
   - scikit-learn=0.22.1
   - scipy=1.4.1
   - setuptools=47.1.1
+  - sip=4.19.8
   - six=1.15.0
   - sqlite=3.31.1
   - tk=8.6.8
   - toolz=0.10.0
   - torchvision=0.6.0
+  - tornado=6.0.4
   - wheel=0.34.2
+  - xorg-libxau=1.0.9
+  - xorg-libxdmcp=1.1.3
   - xz=5.2.5
   - yaml=0.1.7
   - zlib=1.2.11
@@ -60,9 +89,15 @@ dependencies:
     - imageio==2.8.0
     - imageio-ffmpeg==0.4.2
     - instagram-scraper==1.9.0
+    - jsonpatch==1.26
+    - jsonpointer==2.0
     - kornia==0.3.0
     - moviepy==1.0.3
     - proglog==0.1.9
+    - pyzmq==19.0.2
     - requests==2.23.0
     - tqdm==4.46.1
     - urllib3==1.25.9
+    - websocket-client==0.57.0
+prefix: /home/monniert/anaconda3/envs/dtic
+

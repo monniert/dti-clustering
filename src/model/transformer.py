@@ -69,14 +69,13 @@ class PrototypeTransformationNetwork(nn.Module):
         features = self.encoder(x)
         return torch.stack([tsf_seq.predict_parameters(features) for tsf_seq in self.tsf_sequences], dim=0)
 
-    def apply_parameters(self, x, prototypes, betas, is_var=False):
+    def apply_parameters(self, prototypes, betas, is_var=False):
         if self.is_identity:
-            inp, target = x.unsqueeze(1).expand(-1, self.n_prototypes, -1, -1, -1), prototypes
+            return prototypes
         else:
-            inp = x.unsqueeze(1).expand(-1, self.n_prototypes, -1, -1, -1)
             target = [tsf_seq.apply_parameters(proto, beta, is_var=is_var) for tsf_seq, proto, beta
                       in zip(self.tsf_sequences, prototypes, betas)]
-        return inp, torch.stack(target, dim=1)
+            return torch.stack(target, dim=1)
 
     def restart_branch_from(self, i, j, noise_scale=0.001):
         if self.is_identity:

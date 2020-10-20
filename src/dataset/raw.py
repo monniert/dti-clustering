@@ -10,8 +10,8 @@ from utils.image import IMG_EXTENSIONS
 from utils.path import DATASETS_PATH
 
 
-class _AbstractRawDataset(TorchDataset):
-    """Abstract torch dataset from raw files."""
+class _AbstractCollectionDataset(TorchDataset):
+    """Abstract torch dataset from raw files collections associated to tags."""
     __metaclass__ = ABCMeta
     root = DATASETS_PATH
     name = NotImplementedError
@@ -61,5 +61,9 @@ class _AbstractRawDataset(TorchDataset):
         return Compose(transform)
 
 
-class InstagramDataset(_AbstractRawDataset):
+class InstagramDataset(_AbstractCollectionDataset):
     name = 'instagram'
+
+
+class MegaDepthDataset(_AbstractCollectionDataset):
+    name = 'megadepth'

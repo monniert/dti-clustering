@@ -4,8 +4,8 @@ model:
   name: dtikmeans
   n_prototypes: 10
   encoder_name: resnet20
-  transformation_sequence: affine_morpho_tps
-  curriculum_learning: [500, 700]
+  transformation_sequence: identity_affine_morpho_tps
+  curriculum_learning: [100, 500, 700]
   grid_size: 4
   kernel_size: 7
 training:
@@ -14,7 +14,7 @@ training:
     name: adam
     lr: 1.0e-3
     transformer:
-      weight_decay: 0
+      weight_decay: 1.0e-6
   scheduler:
     name: multi_step
     gamma: 0.1
@@ -25,3 +25,4 @@ training:
   val_stat_interval: 40
   check_cluster_interval: 40
   seed: 6065
+  visualizer_port:

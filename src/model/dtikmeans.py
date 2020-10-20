@@ -1,5 +1,3 @@
-from functools import partial
-
 import torch
 import torch.nn as nn
 from torch.optim import Adam
@@ -25,12 +23,11 @@ class DTIKmeans(nn.Module):
         init_type = kwargs.get('init_type', 'sample')
         self.prototypes = nn.Parameter(torch.stack(generate_data(dataset, n_prototypes, init_type)))
         self.transformer = PrototypeTransformationNetwork(dataset.n_channels, dataset.img_size, n_prototypes, **kwargs)
-        self.criterion = partial(nn.MSELoss, reduction='none')()
         self.empty_cluster_threshold = kwargs.get('empty_cluster_threshold', EMPTY_CLUSTER_THRESHOLD / n_prototypes)
         self._reassign_cluster = kwargs.get('reassign_cluster', True)
         use_gaussian_weights = kwargs.get('gaussian_weights', False)
         if use_gaussian_weights:
-            std = kwargs.get('gaussian_weights_std', 10)
+            std = kwargs['gaussian_weights_std']
             self.register_buffer('loss_weights', create_gaussian_weights(dataset.img_size, dataset.n_channels, std))
         else:
             self.loss_weights = None
@@ -44,9 +41,10 @@ class DTIKmeans(nn.Module):
     def forward(self, x):
         prototypes = self.prototypes.unsqueeze(1).expand(-1, x.size(0), x.size(1), -1, -1)
         inp, target = self.transformer(x, prototypes)
-        distances = self.criterion(inp, target).flatten(2).mean(2)
+        distances = (inp - target)**2
         if self.loss_weights is not None:
             distances = distances * self.loss_weights
+        distances = distances.flatten(2).mean(2)
         dist_min = distances.min(1)[0]
         return dist_min.mean(), distances
 

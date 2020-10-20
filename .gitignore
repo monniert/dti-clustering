@@ -22,9 +22,13 @@ Thumbs.db
 *.html
 *.png
 
-# data
+# data and others
 jz_*
 /datasets
 /results
 /runs
 /jeanzay
+/visdom
+report.sh
+/notebook
+set_params.sh
