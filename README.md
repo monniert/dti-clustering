@@ -1,7 +1,8 @@
 # dti-clustering
 
 (NeurIPS2020 oral) Pytorch implementation of "Deep Transformation-Invariant Clustering" 
-paper: &nbsp;&nbsp;
+paper:
+
 [Preprint](https://arxiv.org/abs/2006.11132) | [Project 
 webpage](http://imagine.enpc.fr/~monniert/DTIClustering)
 
