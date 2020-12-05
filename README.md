@@ -8,7 +8,7 @@ webpage](http://imagine.enpc.fr/~monniert/DTIClustering)
 
 ![teaser.jpg](http://imagine.enpc.fr/~monniert/DTIClustering/teaser.jpg)
 
-## Installation :construction_worker:
+## Installation
 
 ### 1. Create conda environment
 
