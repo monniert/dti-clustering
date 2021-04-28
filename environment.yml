@@ -1,4 +1,4 @@
-name: dtic
+name: dti-clustering
 channels:
   - pytorch
   - conda-forge
@@ -84,7 +84,9 @@ dependencies:
   - pip:
     - chardet==3.0.4
     - decorator==4.4.2
+    - filelock==3.0.12
     - future==0.18.2
+    - gdown==3.12.2
     - idna==2.9
     - imageio==2.8.0
     - imageio-ffmpeg==0.4.2
@@ -94,10 +96,9 @@ dependencies:
     - kornia==0.3.0
     - moviepy==1.0.3
     - proglog==0.1.9
+    - pysocks==1.7.1
     - pyzmq==19.0.2
     - requests==2.23.0
     - tqdm==4.46.1
     - urllib3==1.25.9
     - websocket-client==0.57.0
-prefix: /home/monniert/anaconda3/envs/dtic
-

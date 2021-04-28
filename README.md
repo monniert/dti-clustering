@@ -25,7 +25,7 @@ If you find this work useful in your research, please cite:
 
 ```
 conda env create -f environment.yml
-conda activate dtic
+conda activate dti-clustering
 ```
 
 **Optional:** some monitoring routines are implemented, you can use them by specifying the 
