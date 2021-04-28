@@ -1,11 +1,23 @@
-# dti-clustering
+# DTI-Clustering
 
-(NeurIPS2020 oral) Pytorch implementation of "Deep Transformation-Invariant Clustering" 
-paper: &nbsp;&nbsp;
-[Preprint](https://arxiv.org/abs/2006.11132) | [Project 
-webpage](http://imagine.enpc.fr/~monniert/DTIClustering)
+Pytorch implementation of "**Deep Transformation-Invariant Clustering**" paper (NeurIPS 2020, 
+oral)
+
+Check out our [**paper**](https://arxiv.org/abs/2006.11132) and 
+[**webpage**](http://imagine.enpc.fr/~monniert/DTIClustering) for details!
 
 ![teaser.jpg](http://imagine.enpc.fr/~monniert/DTIClustering/teaser.jpg)
+
+If you find this work useful in your research, please cite:
+
+```
+@inproceedings{monnier2020dticlustering,
+  title={{Deep Transformation-Invariant Clustering}},
+  author={Monnier, Tom and Groueix, Thibault and Aubry, Mathieu},
+  booktitle={NeurIPS},
+  year={2020},
+}
+```
 
 ## Installation :construction_worker:
 
@@ -25,6 +37,11 @@ cd visdom && pip install -e .
 ```
 
 ### 2. Download non-torchvision datasets
+
+Following script will download `affNIST-test` and `FRGC` datasets, as well as our unfiltered 
+Instagram collections associated to 
+[#santaphoto](https://www.instagram.com/explore/tags/santaphoto/) and 
+[#weddingkiss](https://www.instagram.com/explore/tags/weddingkiss/):
 
 ```
 ./download_data.sh
@@ -74,21 +91,9 @@ Available configs are:
 
 ### 3. Reproduce our qualitative results on Instagram collections
 
-1. Create a santaphoto dataset by running `process_insta_santa.sh` script. It can take a 
-   while to scrape the 10k posts from Instagram.
+1. (**skip if you already downloaded data using script above**) Create a santaphoto dataset 
+   by running `process_insta_santa.sh` script. It can take a while to scrape the 10k posts 
+   from Instagram.
 2. Launch training with `cuda=gpu_id config=instagram.yml tag=santaphoto ./pipeline.sh`
 
 That's it!
-
-## How to cite? :clipboard:
-
-If you find this work useful in your research, please consider citing:
-
-```
-@inproceedings{monnier2020dticlustering,
-  title={{Deep Transformation-Invariant Clustering}},
-  author={Monnier, Tom and Groueix, Thibault and Aubry, Mathieu},
-  booktitle={NeurIPS},
-  year={2020},
-}
-```
