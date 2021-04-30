@@ -1,10 +1,10 @@
 dataset:
   name: megadepth
-  tag: notre_dame
+  tag: firenze
   img_size: 128
 model:
   name: dtikmeans
-  n_prototypes: 16
+  n_prototypes: 20
   encoder_name: resnet18
   transformation_sequence: identity_color_projective
   curriculum_learning: [150, 400]

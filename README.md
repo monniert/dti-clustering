@@ -47,6 +47,19 @@ Instagram collections associated to
 ./download_data.sh
 ```
 
+**NB:** it may happen that `gdown` hangs, if so you can download them by hand with following 
+gdrive links, then unzip and move them to the `datasets` folder:
+
+- [affNist source
+  link](https://www.cs.toronto.edu/~tijmen/affNIST/32x/transformed/test.mat.zip)
+- [FRGC source
+  link](https://github.com/XifengGuo/JULE-Torch/blob/master/datasets/FRGC/data4torch.h5)
+- [IG santaphoto gdrive 
+  link](https://drive.google.com/file/d/1tv5-\_Iz-LD6-FqFxF67py9ot97BOZbUc/view?usp=sharing)
+- [IG weddingkiss gdrive 
+  link](https://drive.google.com/file/d/1OCLvojYDomLnI6zP6QghgIkZ8PWwmqCD/view?usp=sharing)
+
+
 ## How to use :rocket:
 
 ### 1. Launch a training
@@ -66,9 +79,13 @@ visual results like prototype evolutions and transformation prediction examples 
 saved. Here is an example of learned MNIST prototypes and transformation predictions for a 
 given query image:
 
-![prototypes.gif](./demo/prototypes.gif)
+#### Prototypes
 
-![transformation.gif](./demo/transformation.gif)
+![prototypes.gif](./examples/prototypes.gif)
+
+#### Transformation predictions
+
+![transformation.gif](./examples/transformation.gif)
 
 ### 2. Reproduce our quantitative results on MNIST-test (10 runs)
 
@@ -96,4 +113,23 @@ Available configs are:
    from Instagram.
 2. Launch training with `cuda=gpu_id config=instagram.yml tag=santaphoto ./pipeline.sh`
 
-That's it!
+That's it! You can apply the process to other IG hashtags like 
+[#balitemple](https://www.instagram.com/explore/tags/weddingkiss/) or
+[#weddingkiss](https://www.instagram.com/explore/tags/weddingkiss/) and discover 
+prototypes similar to:
+
+![instagram.jpg](./examples/instagram.jpg)
+
+### 4. Reproduce our qualitative results on MegaDepth
+
+1. You need to download desired landmarks from the original project 
+   [webpage](https://www.cs.cornell.edu/projects/megadepth/), e.g. Florence 
+   Cathedral
+2. Move images to a `datasets/megadepth/firenze/train` folder
+3. Launch training with `cuda=gpu_id config=megadepth.yml tag=firenze ./pipeline.sh`
+
+You should end up with 20 learned prototypes and random sample examples in each cluster. To 
+assess the quality of clustering, you can visualized for each cluster, the prototype, random 
+samples and transformed prototypes:
+
+![firenze.jpg](./examples/firenze.jpg)
