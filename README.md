@@ -122,7 +122,7 @@ prototypes similar to:
 
 ### 4. Reproduce our qualitative results on MegaDepth
 
-1. You need to download desired landmarks from the original project 
+1. You need to download desired landmarks from the original MegaDepth project 
    [webpage](https://www.cs.cornell.edu/projects/megadepth/), e.g. Florence 
    Cathedral
 2. Move images to a `datasets/megadepth/firenze/train` folder
