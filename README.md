@@ -1,14 +1,14 @@
 # DTI-Clustering
 
-Pytorch implementation of "**Deep Transformation-Invariant Clustering**" paper (NeurIPS 2020, 
-oral)
+Pytorch implementation of "[**Deep Transformation-Invariant 
+Clustering**](https://arxiv.org/abs/2006.11132)" paper (accepted at NeurIPS 2020 as an oral)
 
 Check out our [**paper**](https://arxiv.org/abs/2006.11132) and 
 [**webpage**](http://imagine.enpc.fr/~monniert/DTIClustering) for details!
 
 ![teaser.jpg](http://imagine.enpc.fr/~monniert/DTIClustering/teaser.jpg)
 
-If you find this work useful in your research, please cite:
+If you find this code useful in your research, please cite:
 
 ```
 @inproceedings{monnier2020dticlustering,
@@ -114,7 +114,7 @@ Available configs are:
 2. Launch training with `cuda=gpu_id config=instagram.yml tag=santaphoto ./pipeline.sh`
 
 That's it! You can apply the process to other IG hashtags like 
-[#balitemple](https://www.instagram.com/explore/tags/weddingkiss/) or
+[#trevifountain](https://www.instagram.com/explore/tags/trevifountain/) or
 [#weddingkiss](https://www.instagram.com/explore/tags/weddingkiss/) and discover 
 prototypes similar to:
 
@@ -130,6 +130,6 @@ prototypes similar to:
 
 You should end up with 20 learned prototypes and random sample examples in each cluster. To 
 assess the quality of clustering, you can visualized for each cluster, the prototype, random 
-samples and transformed prototypes:
+samples and transformed prototypes like:
 
 ![firenze.jpg](./examples/firenze.jpg)
