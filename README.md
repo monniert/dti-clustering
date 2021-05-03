@@ -148,6 +148,6 @@ If you like this project, please check out related works from our group:
 - [Deprelle et al. - Learning elementary structures for 3D shape generation and matching 
   (NeurIPS 2019)](https://arxiv.org/abs/1908.04725)
 - [Groueix et al. - 3D-CODED: 3D Correspondences by Deep Deformation (ECCV
-  2019)](https://arxiv.org/abs/1806.05228)
+  2018)](https://arxiv.org/abs/1806.05228)
 - [Groueix et al. - AtlasNet: A Papier-Mache Approach to Learning 3D Surface Generation (CVPR 
-  2019)](https://arxiv.org/abs/1802.05384)
+  2018)](https://arxiv.org/abs/1802.05384)
