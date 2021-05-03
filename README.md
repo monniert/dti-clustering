@@ -136,14 +136,14 @@ samples and transformed prototypes like:
 
 ## Further information
 
-If you like this project, please check out other works from our group:
+If you like this project, please check out related works from our group:
 
 #### Follow-ups
 
 - [Monnier et al. - Unsupervised Layered Image Decomposition into Object Prototypes (arXiv 
-  2021)](https://arxiv.org/abs/2104.14575): extension to unsupervised multi-object discovery
+  2021)](https://arxiv.org/abs/2104.14575)
 
-#### Related works on deep transformations
+#### Previous works on deep transformations
 
 - [Deprelle et al. - Learning elementary structures for 3D shape generation and matching 
   (NeurIPS 2019)](https://arxiv.org/abs/1908.04725)
