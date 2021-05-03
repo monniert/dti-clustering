@@ -1,7 +1,7 @@
 # DTI-Clustering
 
-Pytorch implementation of "[**Deep Transformation-Invariant 
-Clustering**](https://arxiv.org/abs/2006.11132)" paper (accepted at NeurIPS 2020 as an oral)
+Pytorch implementation of [**"Deep Transformation-Invariant 
+Clustering"**](https://arxiv.org/abs/2006.11132) paper (accepted at NeurIPS 2020 as an oral)
 
 Check out our [**paper**](https://arxiv.org/abs/2006.11132) and 
 [**webpage**](http://imagine.enpc.fr/~monniert/DTIClustering) for details!
@@ -133,3 +133,21 @@ assess the quality of clustering, you can visualized for each cluster, the proto
 samples and transformed prototypes like:
 
 ![firenze.jpg](./examples/firenze.jpg)
+
+## Further information
+
+If you like this project, please check out other works from our group:
+
+#### Follow-ups
+
+- [Monnier et al. - Unsupervised Layered Image Decomposition into Object Prototypes (arXiv 
+  2021)](https://arxiv.org/abs/2104.14575): extension to unsupervised multi-object discovery
+
+#### Related works on deep transformations
+
+- [Deprelle et al. - Learning elementary structures for 3D shape generation and matching 
+  (NeurIPS 2019)](https://arxiv.org/abs/1908.04725)
+- [Groueix et al. - 3D-CODED: 3D Correspondences by Deep Deformation (ECCV
+  2019)](https://arxiv.org/abs/1806.05228)
+- [Groueix et al. - AtlasNet: A Papier-Mache Approach to Learning 3D Surface Generation (CVPR 
+  2019)](https://arxiv.org/abs/1802.05384)
