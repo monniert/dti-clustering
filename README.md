@@ -6,7 +6,7 @@ Clustering"**](https://arxiv.org/abs/2006.11132) paper (accepted at NeurIPS 2020
 Check out our [**paper**](https://arxiv.org/abs/2006.11132) and 
 [**webpage**](http://imagine.enpc.fr/~monniert/DTIClustering) for details!
 
-![teaser.jpg](http://imagine.enpc.fr/~monniert/DTIClustering/teaser.jpg)
+![teaser.jpg](./media/teaser.jpg)
 
 If you find this code useful in your research, please cite:
 
@@ -81,11 +81,11 @@ given query image:
 
 #### Prototypes
 
-![prototypes.gif](./examples/prototypes.gif)
+![prototypes.gif](./media/prototypes.gif)
 
 #### Transformation predictions
 
-![transformation.gif](./examples/transformation.gif)
+![transformation.gif](./media/transformation.gif)
 
 ### 2. Reproduce our quantitative results on MNIST-test (10 runs)
 
@@ -118,7 +118,7 @@ That's it! You can apply the process to other IG hashtags like
 [#weddingkiss](https://www.instagram.com/explore/tags/weddingkiss/) and discover 
 prototypes similar to:
 
-![instagram.jpg](./examples/instagram.jpg)
+![instagram.jpg](./media/instagram.jpg)
 
 ### 4. Reproduce our qualitative results on MegaDepth
 
@@ -132,7 +132,7 @@ You should end up with 20 learned prototypes and random sample examples in each 
 assess the quality of clustering, you can visualized for each cluster, the prototype, random 
 samples and transformed prototypes like:
 
-![firenze.jpg](./examples/firenze.jpg)
+![firenze.jpg](./media/firenze.jpg)
 
 ## Further information
 
