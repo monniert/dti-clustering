@@ -140,7 +140,7 @@ If you like this project, please check out related works from our group:
 
 #### Follow-ups
 
-- [Monnier et al. - Unsupervised Layered Image Decomposition into Object Prototypes (arXiv 
+- [Monnier et al. - Unsupervised Layered Image Decomposition into Object Prototypes (ICCV 
   2021)](https://arxiv.org/abs/2104.14575)
 
 #### Previous works on deep transformations
