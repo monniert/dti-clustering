@@ -8,7 +8,7 @@ Check out our [**paper**](https://proceedings.neurips.cc/paper/2020/file/5a5eab2
 
 ![teaser.jpg](./media/teaser.jpg)
 
-If you find this code useful in your research, please cite:
+If you find this code useful, don't forget to star the repo ⭐ and cite the paper:
 
 ```
 @inproceedings{monnier2020dticlustering,
