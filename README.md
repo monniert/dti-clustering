@@ -4,7 +4,7 @@ Pytorch implementation of [**"Deep Transformation-Invariant
 Clustering"**](https://arxiv.org/abs/2006.11132) paper (accepted at NeurIPS 2020 as an oral)
 
 Check out our [**paper**](https://proceedings.neurips.cc/paper/2020/file/5a5eab21ca2a8fef4af5e35709ecca15-Paper.pdf) and 
-[**webpage**](https://tmonnier.com/DTIClustering) for details!
+[**webpage**](https://www.tmonnier.com/DTIClustering) for details!
 
 ![teaser.jpg](./media/teaser.jpg)
 
